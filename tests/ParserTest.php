@@ -33,7 +33,8 @@ class ParserTest extends TestCase
         $this->assertTrue(is_array($headers));
         $this->assertArraySubset([
             'DNT'               => [1],
-            'Accept-Language'   => ['en-US,en;q=0.9']
+            'Accept'            => ['text/html', 'application/xhtml+xml'],
+            'Accept-Language'   => ['en-US', 'en;q=0.9']
         ], $headers);
 
         $body = $parsed->getBody();
@@ -45,7 +46,8 @@ class ParserTest extends TestCase
         $reqHeaders = $req->getHeaders();
         $this->assertArraySubset([
             'DNT'               => [1],
-            'Accept-Language'   => ['en-US,en;q=0.9']
+            'Accept'            => ['text/html', 'application/xhtml+xml'],
+            'Accept-Language'   => ['en-US', 'en;q=0.9']
         ], $reqHeaders);
     }
 

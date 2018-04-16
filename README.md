@@ -1,8 +1,10 @@
+[![Build Status](https://travis-ci.org/Frizz925/php-curl-parser.svg?branch=master)](https://travis-ci.org/Frizz925/php-curl-parser)
+
 # cURL Parser
 
 cURL command line parser for PHP
 
-# Installation
+## Installation
 
 Install using composer
 
@@ -10,7 +12,7 @@ Install using composer
 composer require frizz925/curl-parser
 ```
 
-# Usage
+## Usage
 
 ```php
 <?php
