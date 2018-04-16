@@ -1,0 +1,30 @@
+{
+  "name": "frizz925/curl-parser",
+  "description": "Parser for cURL command line",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Izra Faturrahman",
+      "email": "Frizz925@hotmail.com"
+    }
+  ],
+  "minimum-stability": "stable",
+  "require": {
+    "php": "^5.4 || ^7.0",
+    "guzzlehttp/psr7": "^1.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "CurlParser\\": "src/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "CurlParser\\Tests\\": "tests/"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+vendor/
+coverage/
+composer.lock
+.DS_Store
+.vscode
+testdox.*
+coverage.*
+test.php
