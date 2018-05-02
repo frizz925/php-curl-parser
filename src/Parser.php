@@ -122,18 +122,23 @@ class Parser
             }
 
             if ($chunk[0] == '-') {
-                $param = str_replace('-', '', $chunk);
+                $param = preg_replace('/^[-]{1,2}/', '', $chunk);
                 $value = array_shift($parts);
             } else {
                 $param = null;
                 $value = $chunk;
             }
 
-            while (!$this->isQuoteClosed($value) && count($parts) > 0) {
-                $value .= ' '.array_shift($parts);
+            while (!$this->isQuoteClosed($value)) {
+                $concat = array_shift($parts);
+                if (!$concat) {
+                    break;
+                }
+                $value .= " $concat";
             }
 
-            if (in_array($value[0], ["'", '"'])) {
+            $value = trim($value);
+            if (strlen($value) >= 2 && in_array($value[0], ["'", '"'])) {
                 $value = substr($value, 1, strlen($value) - 2);
             }
 
@@ -205,7 +210,7 @@ class Parser
             if (in_array($prop, $this->ignoreHeaders)) {
                 continue;
             }
-            $headers[$prop] = array_map(function($val) {
+            $headers[$prop] = array_map(function ($val) {
                 return trim($val);
             }, explode(',', $value));
         }
