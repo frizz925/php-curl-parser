@@ -151,6 +151,9 @@ class Parser
         $quotes = ["'", '"'];
         $text = trim($text);
         $len = strlen($text);
+        if ($len < 2) {
+            return true;
+        }
         if (!in_array($text[0], $quotes)) {
             return true;
         }
