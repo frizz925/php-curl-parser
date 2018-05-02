@@ -129,7 +129,7 @@ class Parser
                 $value = $chunk;
             }
 
-            while (!$this->isQuoteClosed($value)) {
+            while (!$this->isQuoteClosed($value) && count($parts) > 0) {
                 $value .= ' '.array_shift($parts);
             }
 
@@ -149,6 +149,7 @@ class Parser
     protected function isQuoteClosed($text)
     {
         $quotes = ["'", '"'];
+        $text = trim($text);
         $len = strlen($text);
         if (!in_array($text[0], $quotes)) {
             return true;
