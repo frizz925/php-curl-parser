@@ -113,23 +113,24 @@ class Parser
 
     protected function parseCurl($curl)
     {
-        $parts = preg_split('/\s+[-]{1,2}/', $curl);
+        $parts = explode(' ', $curl);
         $result = [];
-        foreach ($parts as $chunk) {
-            if (strpos($chunk, 'curl') !== false) {
-                $chunk = trim(str_replace('curl', '', $chunk));
-            }
-            if (empty($chunk)) {
+        while (count($parts) > 0) {
+            $chunk = trim(array_shift($parts));
+            if (empty($chunk) || $chunk == 'curl') {
                 continue;
             }
 
-            $pos = strpos($chunk, ' ');
-            if ($pos === false) {
+            if ($chunk[0] == '-') {
+                $param = str_replace('-', '', $chunk);
+                $value = array_shift($parts);
+            } else {
                 $param = null;
                 $value = $chunk;
-            } else {
-                $param = trim(substr($chunk, 0, $pos));
-                $value = trim(substr($chunk, $pos + 1));
+            }
+
+            while (!$this->isQuoteClosed($value)) {
+                $value .= ' '.array_shift($parts);
             }
 
             if (in_array($value[0], ["'", '"'])) {
@@ -143,6 +144,23 @@ class Parser
             }
         }
         return $result;
+    }
+
+    protected function isQuoteClosed($text)
+    {
+        $quotes = ["'", '"'];
+        $len = strlen($text);
+        if (!in_array($text[0], $quotes)) {
+            return true;
+        }
+        if (in_array($text[$len-1], $quotes)) {
+            // check for escaped character
+            if ($text[$len-2] == '\\') {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     protected function parseUri($tree)

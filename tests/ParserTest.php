@@ -10,6 +10,7 @@ class ParserTest extends TestCase
     public function testCharles()
     {
         $this->withFixtureTest('Charles');
+        $this->withFixtureTest('CharlesWithoutCompressed');
     }
 
     public function testChrome()
