@@ -1,5 +1,8 @@
 [![Build Status](https://travis-ci.org/Frizz925/php-curl-parser.svg?branch=master)](https://travis-ci.org/Frizz925/php-curl-parser)
 [![codecov](https://codecov.io/gh/Frizz925/php-curl-parser/branch/master/graph/badge.svg)](https://codecov.io/gh/Frizz925/php-curl-parser)
+[![Latest Stable Version](https://poser.pugx.org/frizz925/curl-parser/v/stable)](https://packagist.org/packages/frizz925/curl-parser)
+[![Total Downloads](https://poser.pugx.org/frizz925/curl-parser/downloads)](https://packagist.org/packages/frizz925/curl-parser)
+[![License](https://poser.pugx.org/frizz925/curl-parser/license)](https://packagist.org/packages/frizz925/curl-parser)
 
 # cURL Parser
 
