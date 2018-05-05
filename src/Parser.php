@@ -162,7 +162,8 @@ class Parser
         if (!in_array($text[0], $quotes)) {
             return true;
         }
-        if (in_array($text[$len-1], $quotes)) {
+        $quote = $text[0];
+        if ($text[$len-1] == $quote) {
             // check for escaped character
             if ($text[$len-2] == '\\') {
                 return false;
