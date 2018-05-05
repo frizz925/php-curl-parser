@@ -11,6 +11,11 @@ class ParserTest extends TestCase
     {
         $this->withFixtureTest('Charles');
         $this->withFixtureTest('CharlesWithoutCompressed');
+        $this->withFixtureTest('CharlesImageUpload', [
+            'method'    => 'POST',
+            'host'      => 'encodable.com',
+            'body'      => true
+        ]);
     }
 
     public function testChrome()
@@ -18,38 +23,47 @@ class ParserTest extends TestCase
         $this->withFixtureTest('Chrome');
     }
 
-    protected function withFixtureTest($name)
+    protected function withFixtureTest($name, $options=[])
     {
-        $fixture = $this->getFixture($name);
-        $parsed = Parser::parse($fixture);
-        $this->assertEquals($fixture, strval($parsed));
-        $this->assertEquals('GET', $parsed->getMethod());
-
-        $uri = $parsed->getUri();
-        $this->assertInstanceOf(UriInterface::class, $uri);
-        $this->assertEquals('api.github.com', $uri->getHost());
-        $this->assertEquals('https', $uri->getScheme('https'));
-
-        $headers = $parsed->getHeaders();
-        $this->assertTrue(is_array($headers));
-        $this->assertArraySubset([
+        $method = 'GET';
+        $host = 'api.github.com';
+        $scheme = 'https';
+        $headers = [
             'DNT'               => [1],
             'Accept'            => ['text/html', 'application/xhtml+xml'],
             'Accept-Language'   => ['en-US', 'en;q=0.9']
-        ], $headers);
+        ];
+        $body = '';
+        extract($options, EXTR_IF_EXISTS);
 
-        $body = $parsed->getBody();
-        $this->assertTrue(is_string($body));
-        $this->assertEmpty($body);
+        $fixture = $this->getFixture($name);
+        $parsed = Parser::parse($fixture);
+        $this->assertEquals($fixture, strval($parsed));
+        $this->assertEquals($method, $parsed->getMethod());
+
+        $uri = $parsed->getUri();
+        $this->assertInstanceOf(UriInterface::class, $uri);
+        $this->assertEquals($host, $uri->getHost());
+        $this->assertEquals($scheme, $uri->getScheme('https'));
+
+        $actualHeaders = $parsed->getHeaders();
+        $this->assertTrue(is_array($actualHeaders));
+        $this->assertArraySubset($headers, $actualHeaders);
+
+        $actualBody = $parsed->getBody();
+        $this->assertTrue(is_string($actualBody));
+        if ($body === true) {
+            $this->assertNotEmpty($actualBody);
+        } elseif (is_string($body)) {
+            $this->assertEquals($body, $actualBody);
+        } else {
+            $this->assertEmpty($actualBody);
+        }
 
         $req = $parsed->toRequest();
         $this->assertInstanceOf(RequestInterface::class, $req);
         $reqHeaders = $req->getHeaders();
-        $this->assertArraySubset([
-            'DNT'               => [1],
-            'Accept'            => ['text/html', 'application/xhtml+xml'],
-            'Accept-Language'   => ['en-US', 'en;q=0.9']
-        ], $reqHeaders);
+        $this->assertArraySubset($headers, $reqHeaders);
     }
 
     public function getFixture($name)
