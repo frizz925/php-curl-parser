@@ -5,33 +5,25 @@ use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\RequestInterface;
 use CurlParser\Parser;
 
-class ParserTest extends TestCase
+abstract class FixtureTestCase extends TestCase
 {
-    public function testCharles()
-    {
-        $this->withFixtureTest('Charles');
-        $this->withFixtureTest('CharlesWithoutCompressed');
-        $this->withFixtureTest('CharlesImageUpload', [
-            'method'    => 'POST',
-            'host'      => 'encodable.com',
-            'body'      => true
-        ]);
-    }
-
-    public function testChrome()
-    {
-        $this->withFixtureTest('Chrome');
-    }
-
-    protected function withFixtureTest($name, $options=[])
+    /**
+     * Run test case using fixture
+     *
+     * @param string $name
+     * @param array $options
+     * @return Parser
+     */
+    protected function withFixtureTest($name, $options = [])
     {
         $method = 'GET';
         $host = 'api.github.com';
         $scheme = 'https';
         $headers = [
-            'DNT'               => [1],
-            'Accept'            => ['text/html', 'application/xhtml+xml'],
-            'Accept-Language'   => ['en-US', 'en;q=0.9']
+            'DNT'               => '1',
+            'Accept'            => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language'   => 'en-US,en;q=0.9',
+            'User-Agent'        => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36',
         ];
         $body = '';
         extract($options, EXTR_IF_EXISTS);
@@ -46,9 +38,10 @@ class ParserTest extends TestCase
         $this->assertEquals($host, $uri->getHost());
         $this->assertEquals($scheme, $uri->getScheme('https'));
 
-        $actualHeaders = $parsed->getHeaders();
+        $actualHeaders = $parsed->getHeaderLines();
         $this->assertTrue(is_array($actualHeaders));
         $this->assertArraySubset($headers, $actualHeaders);
+        $this->assertArrayNotHasKey('Cookie', $actualHeaders);
 
         $actualBody = $parsed->getBody();
         $this->assertTrue(is_string($actualBody));
@@ -62,8 +55,7 @@ class ParserTest extends TestCase
 
         $req = $parsed->toRequest();
         $this->assertInstanceOf(RequestInterface::class, $req);
-        $reqHeaders = $req->getHeaders();
-        $this->assertArraySubset($headers, $reqHeaders);
+        return $parsed;
     }
 
     public function getFixture($name)
