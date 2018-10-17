@@ -2,12 +2,12 @@
 
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
 
-class Parser
+class Parser implements RequestInterface
 {
-
     /**
      * Parse cURL command into objects
      *
@@ -18,6 +18,16 @@ class Parser
     {
         return new static($curl);
     }
+
+    /** @var string[] */
+    protected $singleParams = [
+        'compressed'
+    ];
+
+    /** @var string[] */
+    protected $ignoreHeaders = [
+        'cookie'
+    ];
 
     /** @var string */
     private $curl;
@@ -31,15 +41,17 @@ class Parser
     /** @var string */
     private $body;
 
-    /** @var string[] */
-    protected $singleParams = [
-        'compressed'
-    ];
+    /** @var string[][] */
+    private $headers;
+
+    /** @var string[][] */
+    private $normalizedHeaders;
 
     /** @var string[] */
-    protected $ignoreHeaders = [
-        'Cookie'
-    ];
+    private $headerNamesMap;
+
+    /** @var string */
+    private $protocolVersion = '1.1';
 
     /**
      * Constructor for the parser
@@ -53,47 +65,167 @@ class Parser
         $this->uri = $this->parseUri($this->tree);
         $this->method = $this->parseMethod($this->tree);
         $this->headers = $this->parseHeaders($this->tree);
+        $this->normalizedHeaders = $this->normalizeHeaders($this->headers);
+        $this->headerNamesMap = $this->mapHeaderNames($this->headers);
         $this->body = $this->parseBody($this->tree);
     }
 
-    /**
-     * Get the cURL request URI
-     *
-     * @return UriInterface
-     */
-    public function getUri()
+    public function getProtocolVersion()
     {
-        return $this->uri;
+        // TODO: Detect parsed HTTP protocol version
+        return $this->protocolVersion;
     }
 
-    /**
-     * Get the cURL request method
-     *
-     * @return string
-     */
-    public function getMethod()
+    public function withProtocolVersion($version)
     {
-        return $this->method;
+        $new = clone $this;
+        $new->protocolVersion = $version;
+        return $new;
     }
 
-    /**
-     * Get the cURL request headers
-     *
-     * @return string[][]
-     */
     public function getHeaders()
     {
         return $this->headers;
     }
 
-    /**
-     * Get the cURL request body
-     *
-     * @return string
-     */
+    public function hasHeader($name)
+    {
+        $name = strtolower($name);
+        return isset($this->normalizedHeaders[$name]);
+    }
+
+    public function getHeader($name)
+    {
+        $name = strtolower($name);
+        if (!$this->hasHeader($name)) {
+            return [];
+        }
+        return $this->normalizedHeaders[$name];
+    }
+
+    public function getHeaderLine($name)
+    {
+        return implode(', ', $this->getHeader($name));
+    }
+
+    public function withHeader($name, $value)
+    {
+        if (!is_array($value)) {
+            $value = [$value];
+        }
+        $normalized = strtolower($name);
+        $new = clone $this;
+        $new->headers[$name] = $value;
+        $new->normalizedHeaders[$normalized] = $value;
+        $new->headerNamesMap[$normalized] = $name;
+        return $new;
+    }
+
+    public function withAddedHeader($name, $value)
+    {
+        if (!is_array($value)) {
+            $value = [$value];
+        }
+        if ($this->hasHeader($name)) {
+            $value = array_merge($this->getHeader($name), $value);
+        }
+        return $this->withHeader($name, $value);
+    }
+
+    public function withoutHeader($name)
+    {
+        if (!$this->hasHeader($name)) {
+            return $this;
+        }
+        $normalized = strtolower($name);
+        $name = $this->headerNamesMap[$normalized];
+        $new = clone $this;
+        unset($new->headers[$name]);
+        unset($new->normalizedHeaders[$normalized]);
+        return $new;
+    }
+
     public function getBody()
     {
         return $this->body;
+    }
+
+    /**
+     * @inheritDoc
+     * @codeCoverageIgnore
+     */
+    public function withBody(StreamInterface $body)
+    {
+        $new = clone $this;
+        $new->body = $body;
+        return $new;
+    }
+
+    public function getRequestTarget()
+    {
+        if (isset($this->requestTarget)) {
+            return $this->requestTarget;
+        }
+        $uri = $this->getUri();
+        $path = $uri->getPath();
+        $query = $uri->getQuery();
+        return !empty($query) ? sprintf('%s?%s', $path, $query) : $path;
+    }
+
+    public function withRequestTarget($requestTarget)
+    {
+        $new = clone $this;
+        $new->requestTarget = $requestTarget;
+        return $new;
+    }
+
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
+    public function withMethod($method)
+    {
+        $new = clone $this;
+        $new->method = $method;
+        return $new;
+    }
+
+
+    public function getUri()
+    {
+        return $this->uri;
+    }
+
+    public function withUri(UriInterface $uri, $preserveHost = false)
+    {
+        $new = clone $this;
+        $new->uri = $uri;
+        return $new;
+    }
+
+    /**
+     * Get the cURL request header names
+     *
+     * @return string[]
+     */
+    public function getHeaderNames()
+    {
+        return array_keys($this->headers);
+    }
+
+    /**
+     * Get the cURL request header lines
+     *
+     * @return string[]
+     */
+    public function getHeaderLines()
+    {
+        $headers = $this->getHeaders();
+        foreach ($headers as $name => $values) {
+            $headers[$name] = implode(', ', $values);
+        }
+        return $headers;
     }
 
     /**
@@ -111,6 +243,9 @@ class Parser
         );
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     protected function parseCurl($curl)
     {
         $parts = explode(' ', $curl);
@@ -151,6 +286,9 @@ class Parser
         return $result;
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
     protected function isQuoteClosed($text)
     {
         $quotes = ["'", '"'];
@@ -208,14 +346,33 @@ class Parser
             $pos = strpos($headerStr, ': ');
             $prop = trim(substr($headerStr, 0, $pos));
             $value = trim(substr($headerStr, $pos + 1));
-            if (in_array($prop, $this->ignoreHeaders)) {
+            $normalized = strtolower($prop);
+            if (in_array($normalized, $this->ignoreHeaders)) {
                 continue;
             }
-            $headers[$prop] = array_map(function ($val) {
-                return trim($val);
-            }, explode(',', $value));
+            $headers[$prop] = [$value];
         }
         return $headers;
+    }
+
+    protected function normalizeHeaders($headers)
+    {
+        $normalized = [];
+        foreach ($headers as $name => $values) {
+            $name = strtolower($name);
+            $normalized[$name] = $values;
+        }
+        return $normalized;
+    }
+
+    protected function mapHeaderNames($headers)
+    {
+        $mapped = [];
+        foreach (array_keys($headers) as $header) {
+            $normalized = strtolower($header);
+            $mapped[$normalized] = $header;
+        }
+        return $mapped;
     }
 
     protected function parseBody($tree)
@@ -233,17 +390,13 @@ class Parser
         if (is_string($params)) {
             $params = [$params];
         }
-        $filtered = [];
-        foreach ($tree as $arg) {
+        return array_filter($tree, function ($arg) use ($params) {
             if (!is_array($arg) || count($arg) < 2) {
-                continue;
+                return false;
             }
             list($param) = $arg;
-            if (in_array($param, $params)) {
-                $filtered[] = $arg;
-            }
-        }
-        return $filtered;
+            return in_array($param, $params);
+        });
     }
 
     public function __toString()
