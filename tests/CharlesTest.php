@@ -4,7 +4,7 @@ class CharlesTest extends FixtureTestCase
 {
     public function testCharles()
     {
-        $this->withFixtureTest('Charles');
+        $this->withFixtureTest('Charles', ['method' => 'DELETE']);
         $this->withFixtureTest('CharlesWithoutCompressed');
         $this->withFixtureTest('CharlesImageUpload', [
             'method'    => 'POST',
