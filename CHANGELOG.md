@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/Frizz925/php-curl-parser/tree/1.0.3) (2018-10-17)
+[Full Changelog](https://github.com/Frizz925/php-curl-parser/compare/1.0.3...1.1.0)
+
+**Changed:**
+* Implement PSR-7's RequestInterface
+* Implement cookies parsing
+* Implement HTTP/2 request headers support
+
 ## [1.0.3](https://github.com/Frizz925/php-curl-parser/tree/1.0.3) (2018-05-02)
 [Full Changelog](https://github.com/Frizz925/php-curl-parser/compare/1.0.2...1.0.3)
 
