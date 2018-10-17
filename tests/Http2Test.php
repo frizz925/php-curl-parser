@@ -21,5 +21,9 @@ class Http2Test extends FixtureTestCase
             'headers'   => $headers,
         ]);
         $this->assertInstanceOf(Parser::class, $parser);
+        $this->assertEquals([
+            '1P_JAR'    => '2018-10-12-13',
+            'A'         => 'B',
+        ], $parser->getCookies());
     }
 }

@@ -45,6 +45,9 @@ class Parser implements RequestInterface
     private $headers;
 
     /** @var string[][] */
+    private $cookies;
+
+    /** @var string[][] */
     private $normalizedHeaders;
 
     /** @var string[] */
@@ -68,6 +71,7 @@ class Parser implements RequestInterface
         $this->normalizedHeaders = $this->normalizeHeaders($this->headers);
         $this->headerNamesMap = $this->mapHeaderNames($this->headers);
         $this->body = $this->parseBody($this->tree);
+        $this->cookies = $this->parseCookies($this->tree);
     }
 
     public function getProtocolVersion()
@@ -229,6 +233,16 @@ class Parser implements RequestInterface
     }
 
     /**
+     * Get the cURL request cookies
+     *
+     * @return string[][]
+     */
+    public function getCookies()
+    {
+        return $this->cookies;
+    }
+
+    /**
      * Convert parse cURL request into PSR request
      *
      * @return RequestInterface
@@ -383,6 +397,32 @@ class Parser implements RequestInterface
             return $value;
         }
         return '';
+    }
+
+    protected function parseCookies($tree)
+    {
+        $cookiePrefix = 'cookie: ';
+        foreach ($this->filterTree($tree, 'H') as $arg) {
+            list($param, $headerStr) = $arg;
+            $normalized = strtolower($headerStr);
+            if (strpos($normalized, $cookiePrefix) !== 0) {
+                continue;
+            }
+            $cookiesStr = trim(substr($headerStr, strlen($cookiePrefix)));
+            break;
+        }
+        if (empty($cookiesStr)) {
+            return [];
+        }
+        $cookies = [];
+        foreach (explode(';', $cookiesStr) as $cookieStr) {
+            $cookieStr = trim($cookieStr);
+            $idx = strpos($cookieStr, '=');
+            $name = substr($cookieStr, 0, $idx);
+            $value = substr($cookieStr, $idx + 1);
+            $cookies[$name] = $value;
+        }
+        return $cookies;
     }
 
     protected function filterTree($tree, $params)
