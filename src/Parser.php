@@ -340,7 +340,7 @@ class Parser implements RequestInterface
     protected function parseMethod($tree)
     {
         $method = 'GET';
-        $tree = $this->filterTree($tree, ['X', 'data', 'data-binary']);
+        $tree = $this->filterTree($tree, ['X', 'd', 'data', 'data-binary']);
         foreach ($tree as $arg) {
             list($param, $value) = $arg;
             if ($param === 'X') {
@@ -391,7 +391,7 @@ class Parser implements RequestInterface
 
     protected function parseBody($tree)
     {
-        $tree = $this->filterTree($tree, ['data', 'data-binary']);
+        $tree = $this->filterTree($tree, ['d', 'data', 'data-binary']);
         foreach ($tree as $arg) {
             list($param, $value) = $arg;
             return $value;
